@@ -523,6 +523,7 @@ def get_single_dir_child_data(path: str, include_hidden: bool = False) -> Option
                     result[name] = {
                         "size_bytes": None if os.path.isdir(full_child_path) else st.st_size,
                         "modified_epoch": st.st_mtime,
+                        "created_epoch": st.st_ctime,
                         "hidden": hidden,
                     }
         except PermissionError:
@@ -530,6 +531,7 @@ def get_single_dir_child_data(path: str, include_hidden: bool = False) -> Option
                 "kind": "error",
                 "size_bytes": -1,
                 "modified_epoch": None,
+                "created_epoch": None,
                 "hidden": None,
             }
 
@@ -591,6 +593,7 @@ def get_windows_volumes_info():
                         "label": label,
                         "size_bytes": None,
                         "modified_epoch": max(st.st_mtime, st.st_ctime),
+                        "created_epoch": st.st_ctime,
                     }
                 except OSError as e:
                     logger.warning("Could not get information for %s", path, exc_info=e)
@@ -651,6 +654,7 @@ def get_windows_network_locations():
                     "label": entry.name + " (" + target + ")",
                     "size_bytes": None,
                     "modified_epoch": None,
+                    "created_epoch": None,
                 }
             except Exception:
                 logger.error("Can't get target from %s", lnk_path, exc_info=True)
