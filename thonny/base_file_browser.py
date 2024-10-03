@@ -85,6 +85,8 @@ class BaseFileBrowser(ttk.Frame):
                 "size_fmt",
                 "modified_epoch",
                 "size_bytes",
+                "created_fmt",
+                "created_epoch",
             ],
             displaycolumns=(
                 # 4,
@@ -566,6 +568,17 @@ class BaseFileBrowser(ttk.Frame):
     def clear_error(self):
         "TODO:"
 
+    def get_directory_size(self, path):
+        size = 0
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                fp = os.path.join(root, f)
+                if os.path.isdir(fp):
+                    size += os.path.get_directory_size(fp)
+                if os.path.isfile(fp):
+                    size += os.path.getsize(fp)
+        return size
+
     def update_node_data(self, node_id, name, data):
         assert node_id != ""
 
@@ -585,13 +598,30 @@ class BaseFileBrowser(ttk.Frame):
         else:
             time_str = ""
 
+        if data.get("created_epoch"):
+            try:
+                created_time_str = format_date_and_time_compact(
+                    time.localtime(int(data["created_epoch"])),
+                    without_seconds=True,
+                    optimize_year=True,
+                )
+            except Exception:
+                logger.exception("Could not format created (%r)", data.get("created_epoch"))
+                created_time_str = ""
+        else:
+            created_time_str = ""
+
         self.tree.set(node_id, "modified_fmt", time_str)
         self.tree.set(node_id, "modified_epoch", data.get("modified_epoch", ""))
+        self.tree.set(node_id, "created_fmt", created_time_str)
+        self.tree.set(node_id, "created_epoch", data.get("created_epoch", ""))
 
         if data["isdir"]:
+            # TODO: And this
             self.tree.set(node_id, "kind", "dir")
-            self.tree.set(node_id, "size_fmt", "")
-            self.tree.set(node_id, "size_bytes", "")
+            dir_size = self.get_directory_size(path)
+            self.tree.set(node_id, "size_fmt", dir_size)
+            self.tree.set(node_id, "size_bytes", sizeof_fmt(dir_size))
 
             # Ensure that expand button is visible
             # unless we know it doesn't have children
@@ -825,6 +855,21 @@ class BaseFileBrowser(ttk.Frame):
         text = tr("Path") + ":\n    " + values["path"] + "\n\n"
         if values["kind"] == "dir":
             title = tr("Directory properties")
+            size_fmt_str = str(values["size_fmt"]) + " " + tr("bytes")
+            bytes_str = str(values["size_bytes"])
+
+            text += (
+                tr("Size")
+                + ":\n    "
+                + (
+                    bytes_str
+                    if size_fmt_str.endswith(" B")
+                    else bytes_str + "  (" + size_fmt_str + ")"
+
+                )
+                + "\n\n"
+            )
+
         else:
             title = tr("File properties")
             size_fmt_str = values["size_fmt"]
@@ -843,6 +888,9 @@ class BaseFileBrowser(ttk.Frame):
 
         if values["modified_fmt"].strip():
             text += tr("Modified") + ":\n    " + values["modified_fmt"] + "\n\n"
+
+        if values["created_fmt"].strip():
+            text += tr("Created") + ":\n    " + values["created_fmt"] + "\n\n"
 
         messagebox.showinfo(title, text.strip(), master=self)
 

@@ -105,6 +105,7 @@ Y2000_EPOCH_OFFSET = 946684800
 STAT_KIND_INDEX = 0
 STAT_SIZE_INDEX = 6
 STAT_MTIME_INDEX = 8
+STAT_CTIME_INDEX = 9
 
 PASTE_MODE_CMD = b"\x05"
 PASTE_MODE_LINE_PREFIX = b"=== "
@@ -1394,10 +1395,12 @@ class MicroPythonBackend(MainBackend, ABC):
             # file size is only info available for micro:bit files
             size = stat
             modified = None
+            created = None
             kind = "file"
         elif isinstance(stat, str):
             kind = None
             size = None
+            created = None
             modified = None
             error = stat
         else:
@@ -1410,11 +1413,13 @@ class MicroPythonBackend(MainBackend, ABC):
                 size = stat[STAT_SIZE_INDEX]
 
             modified = self._system_time_to_posix_time(stat[STAT_MTIME_INDEX])
+            created = self._system_time_to_posix_time(stat[STAT_CTIME_INDEX])
 
         result = {
             "kind": kind,
             "size_bytes": size,
             "modified_epoch": modified,
+            "created_epoch": created,
             "hidden": basename.startswith("."),
         }
         if error:

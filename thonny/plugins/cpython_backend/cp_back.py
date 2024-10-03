@@ -699,6 +699,7 @@ class MainCPythonBackend(MainBackend):
                 "kind": kind,
                 "size_bytes": None if kind == "dir" else os.path.getsize(path),
                 "modified_epoch": os.path.getmtime(path),
+                "created_epoch": os.path.getctime(path),
                 "error": None,
             }
         except OSError as e:
@@ -707,6 +708,7 @@ class MainCPythonBackend(MainBackend):
                 "kind": None,
                 "size_bytes": None,
                 "modified_epoch": None,
+                "created_epoch": None,
                 "error": str(e),
             }
 
